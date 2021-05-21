@@ -103,35 +103,31 @@ public class JobShopClient {
             assert jobShopSessionRI1 != null;
             jobShopSessionRI.listJobGroup();
 
-
-            jobShopSessionRI.createJobGroup(1,200,"teste",1);
-            jobShopSessionRI.createJobGroup(3,300,"teste2",0);
-            jobShopSessionRI1.createJobGroup(2,300,"teste3",1);
-
-            if(jobShopSessionRI.createWorker(1)) {
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Success 1");
-            }
-            if(jobShopSessionRI.createWorker(1)) {
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Success 2");
-            }
-            if(jobShopSessionRI.createWorker(2)) {
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Success 3 ");
-
-            }
-            if(jobShopSessionRI1.createWorker(2)) {
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Success 4");
-            }
-            if(jobShopSessionRI1.createWorker(3)) {
-                Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Success 4");
-            }
-
+            String basePath = "edu/ufp/inf/sd/project/data/";
+            jobShopFactoryRI.creditTrasaction("tiago",200);
+            jobShopSessionRI.createJobGroup(1,13,basePath + "la01.txt",1);
+            jobShopSessionRI.createJobGroup(3,300,basePath + "la02.txt",0);
+            jobShopSessionRI1.createJobGroup(2,300,basePath + "la03.txt",1);
+            //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Credits JobGroup 1");
+            //print(jobShopSessionRI.listJobGroup());
+            print(jobShopSessionRI.showBalace());
             jobShopSessionRI.assocWorker(1,1);
             jobShopSessionRI.assocWorker(1,2);
+            jobShopSessionRI.assocWorker(1,4);
             jobShopSessionRI1.assocWorker(1,3);
+            jobShopSessionRI1.assocWorker(1,5);
 
-            print(jobShopSessionRI.listJobGroup());
+            //jobShopSessionRI1.assocWorker(1,3); Verificar que nao adiciona worker com o mesmo id
+
+            //jobShopSessionRI.deleteJobGroup(1);
             print(jobShopSessionRI1.listJobGroup());
-            jobShopSessionRI.printWorkers();
+            //jobShopSessionRI.printWorkersSession();
+
+            SchedulingState schedulingState = new SchedulingState(basePath + "la01.txt");
+            jobShopSessionRI.execute(1,schedulingState);
+            jobShopSessionRI.printWorkers(1);
+
+
             //============ Call TS remote service ============
            // String jsspInstancePath = "edu/ufp/inf/sd/project/data/la01.txt";
            // int makespan = this.jobShopRI.runTS(jsspInstancePath);

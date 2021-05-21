@@ -2,6 +2,7 @@ package edu.ufp.inf.sd.project.server;
 
 
 import edu.ufp.inf.sd.project.client.WorkerImpl;
+import edu.ufp.inf.sd.project.client.WorkerRI;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -11,15 +12,22 @@ import java.util.logging.Logger;
 
 public class JobShopSessionImpl implements JobShopSessionRI {
     private JobShopFactoryImpl jobShop;
-    private ArrayList<JobGroupImpl> jobGroups;
-    private ArrayList<WorkerImpl> workers;
+    private ArrayList<JobGroupRI> jobGroups;
+    private ArrayList<WorkerRI> workers;
     private String username;
-
 
     @Override
     public boolean createJobGroup(int id, int credits, String filename, int algorithm) throws RemoteException { //falta os créditos
         User u = this.jobShop.getDbMockup().getUser(username);
         if(JobShopServer.containsJobGroup(id) || JobShopServer.containsJSS(filename)) { //verifica se jobGroup existe no array global e JSS está a ser usada
+            return false;
+        }
+
+        if(credits <= 0) {
+            return false;
+        }
+
+        if(!this.jobShop.creditTrasaction(this.username, -credits)) {
             return false;
         }
 
@@ -43,51 +51,67 @@ public class JobShopSessionImpl implements JobShopSessionRI {
 
     @Override
     public void pauseJobGroup(int id) throws RemoteException {
-           for(JobGroupImpl j : this.jobGroups) {
-               if(j.getId() == id) {
-                   j.setSchedulingState(false);
-               }
-           }
+         //  for(JobGroupRI j : this.jobGroups) {
+         //      if(j.getId() == id) {
+         //          j.setSchedulingState(false);
+         //      }
+         //  }
         }
 
     @Override
     public void deleteJobGroup(int id) throws RemoteException {
         this.jobGroups.removeIf(jb -> jb.getId()==(id));
+        JobShopServer.deleteJobGroup(id);
     }
 
     @Override
     public void logout() throws RemoteException {
         this.jobShop.destroySession(this.username);
     }
+
     @Override
-    public boolean createWorker(int id) {
-        if(JobShopServer.containsWorker(id)) { //verifica se jobGroup existe no array global e JSS está a ser usada
+    public String showBalace() throws RemoteException {
+        User u = this.jobShop.getDbMockup().getUser(this.username);
+        return u.getUname() + " " + u.getCredits();
+    }
+    @Override
+    public void printWorkers(int id) throws RemoteException {
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO,JobShopServer.printWorkers(id));
+    }
+
+    @Override
+    public boolean assocWorker(int idJ,int idw) throws RemoteException { //id do worker id jobgroup
+        if(JobShopServer.containsWorker(idw)) { //verifica se id deste worker está ser utilizado
             return false;
         }
 
-        WorkerImpl worker = new WorkerImpl(id);
+        JobGroupImpl j = JobShopServer.getJobGroup(idJ); //buscar o jobgroup por id
+        if(j !=  null) {
+            if (j.getCredits() - this.calculateMaxCreditsSentJobGroup(idJ) < 0) { //verificar se o valor de creditos do jobgrou cobre o dos workers
+                Logger.getLogger(this.getClass().getName()).log(Level.WARNING,"WorkerID: " + (idw) + " " + (this.calculateMaxCreditsSentJobGroup(idJ)));
+                return false;
+            }
+        }
+
+        WorkerImpl worker = new WorkerImpl(idw);
         if(worker.getJobGroup() != null) { //se worker tiver jobgroup (Já pode ter sido utlizado)
             worker.getJobGroup().getWorkers().remove(worker);
         }
-        if(this.getWorkerId(id) == null) {
+
+        if(this.getWorkerId(idw) == null) {
             this.workers.add(worker);
-            JobShopServer.addWorker(worker);
-            return true; //JobGroup criado com sucesso
         }
-        return false;
-    }
 
-    public void assocWorker(int idJ,int idw) { //id do worker id jobgroup
-        JobGroupImpl j = JobShopServer.getJobGroup(idJ); //buscar o jobgroup por id
-        WorkerImpl w = this.getWorkerId(idw);
-            if(j != null && w != null) {
-                    j.addWorker(w); //adiciona worker ao array de workers do jobgroup
-                    w.setJobGroup(j); //worker fica com referencia para o seu jobgroup
+            if(j != null) {
+                    j.addWorker(worker); //adiciona worker ao array de workers do jobgroup
+                    worker.setJobGroup(j); //worker fica com referencia para o seu jobgroup
+                return false;
             }
+            return true;
     }
 
-    private JobGroupImpl getJobGroupId(int id) {
-        for(JobGroupImpl j : this.jobGroups) {
+    private JobGroupRI getJobGroupId(int id) {
+        for(JobGroupRI j : this.jobGroups) {
             if(j.getId() == id) {
                 return j;
             }
@@ -95,8 +119,8 @@ public class JobShopSessionImpl implements JobShopSessionRI {
         return null;
     }
 
-    private WorkerImpl getWorkerId(int id) {
-        for(WorkerImpl w :this.workers) {
+    private WorkerRI getWorkerId(int id) {
+        for(WorkerRI w :this.workers) {
             if(w.getId() == id) {
                 return w;
             }
@@ -105,7 +129,7 @@ public class JobShopSessionImpl implements JobShopSessionRI {
     }
 
     private boolean containsWorker(int id) {
-        for(WorkerImpl w : this.workers) {
+        for(WorkerRI w : this.workers) {
             if(w.getId() == id) {
                 return true; //existe worker
             }
@@ -113,10 +137,10 @@ public class JobShopSessionImpl implements JobShopSessionRI {
         return false;
     }
 
-    public void printWorkers() {
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, JobShopServer.printWorkers());
+    @Override
+    public void printWorkersSession() {
+        Logger.getLogger(this.getClass().getName()).log(Level.INFO, this.workers.toString());
     }
-
 
     public JobShopSessionImpl(JobShopFactoryImpl jobShopFactory, String username) throws RemoteException{
         super();
@@ -126,6 +150,37 @@ public class JobShopSessionImpl implements JobShopSessionRI {
         this.workers = new ArrayList<>();
         UnicastRemoteObject.exportObject(this,0);
     }
+
+    @Override
+    public void execute(int idJ, SchedulingState schedulingState) throws RemoteException {
+        JobGroupRI j = this.getJobGroupId(idJ);
+        if(j != null) {
+            j.setSchedulingState(schedulingState);
+        }
+    }
+
+    private int calculateMaxCreditsSentJobGroup(int idJobGroup) {
+        int maxCredits = 0;
+        int i = 0;
+        JobGroupImpl j = JobShopServer.getJobGroup(idJobGroup);
+        if (j != null) {
+            if (!j.getWorkers().isEmpty()) {
+                for (WorkerRI w : j.getWorkers()) {
+                    if (i == 0) {
+                        maxCredits += 10;
+                        i = 1;
+                    } else {
+                        maxCredits += 1;
+                    }
+                }
+                return maxCredits + 1; //para o que estou associar
+            } else {
+                return maxCredits + 10; //primeiro então vai ser o melhor tempo
+            }
+        }
+        return 0;
+    }
+
 
 
 }

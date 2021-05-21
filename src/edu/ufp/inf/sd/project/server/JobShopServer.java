@@ -1,6 +1,8 @@
 package edu.ufp.inf.sd.project.server;
 
 import edu.ufp.inf.sd.project.client.WorkerImpl;
+import edu.ufp.inf.sd.project.client.WorkerRI;
+import edu.ufp.inf.sd.rabbitmqservices._02_workqueues.consumer.Worker;
 import edu.ufp.inf.sd.rmi.util.rmisetup.SetupContextRMI;
 
 import java.io.FileInputStream;
@@ -39,7 +41,7 @@ public class JobShopServer {
     private JobShopFactoryRI jobShopFactoryRI;
 
     private static ArrayList<JobGroupImpl> jobGroups = new ArrayList<>();
-    private static ArrayList<WorkerImpl> workers = new ArrayList<>();
+    //private static ArrayList<WorkerImpl> workers = new ArrayList<>();
 
     public static void main(String[] args) {
         if (args != null && args.length < 3) {
@@ -141,18 +143,24 @@ public class JobShopServer {
     }
 
     public static boolean containsWorker(int id) {
-        for(WorkerImpl w : workers) {
-            if(w.getId() == id) {
-                return true;
+        for(JobGroupImpl j : jobGroups) {
+            for(WorkerRI w : j.getWorkers()) {
+                if(w.getId() == id) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    public static void addWorker(WorkerImpl w) {
-        workers.add(w);
+    public static boolean deleteJobGroup(int id) {
+        JobGroupImpl j = getJobGroup(id);
+        if(j != null) {
+            jobGroups.remove(j);
+            return true;
+        }
+        return false;
     }
-
 
     public static boolean containsJSS(String jss) {
         for(JobGroupImpl j : jobGroups) {
@@ -163,8 +171,16 @@ public class JobShopServer {
         return false;
     }
 
-    public static String printWorkers() {
-       return workers.toString();
+    public static String printWorkers(int id) {
+       String s = null;
+       for(JobGroupImpl w: jobGroups) {
+           if (w.getId() == id) {
+               if (w.getWorkers() != null) {
+                   s = s + w.getWorkers().toString();
+               }
+           }
+       }
+       return s;
     }
 
     public static JobGroupImpl getJobGroup(int id) {

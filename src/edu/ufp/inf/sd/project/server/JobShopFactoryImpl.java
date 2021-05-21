@@ -40,4 +40,16 @@ public class JobShopFactoryImpl extends UnicastRemoteObject implements JobShopFa
 
     public DBMockup getDbMockup() { return dbMockup; }
 
+    @Override
+    public boolean creditTrasaction(String username, int credits) {
+        User u = this.getDbMockup().getUser(username);
+        if(u != null) {
+            if(u.getCredits() + credits >= 0) {
+                u.setCredits(u.getCredits() + credits);
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

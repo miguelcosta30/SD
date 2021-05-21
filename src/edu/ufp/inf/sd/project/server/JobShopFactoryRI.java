@@ -7,4 +7,5 @@ public interface JobShopFactoryRI extends Remote {
     boolean register(String username, String password) throws RemoteException;
     JobShopSessionRI login(String username, String password) throws RemoteException;
     void destroySession (String u) throws RemoteException;
-}
+    boolean creditTrasaction(String username, int credits) throws RemoteException;
+    }
