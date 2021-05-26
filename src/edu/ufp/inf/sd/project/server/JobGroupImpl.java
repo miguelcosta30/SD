@@ -69,7 +69,8 @@ public class JobGroupImpl implements JobGroupRI {
         this.credits = credits;
     }
 
-    public String getFilename() {
+    @Override
+    public String getFilename() throws RemoteException {
         return filename;
     }
 
@@ -126,9 +127,11 @@ public class JobGroupImpl implements JobGroupRI {
                 int idWorkerMinMake = calculateMinMakespan();
                 for(WorkerRI w : this.workers) {
                     if(w.getId() == idWorkerMinMake) {
-                        w.addCredits(10);
+                        w.addCredits(11);
+                        this.credits -=11;
                     } else {
                         w.addCredits(1);
+                        this.credits--;
                     }
                 }
             }
@@ -154,6 +157,7 @@ public class JobGroupImpl implements JobGroupRI {
         }
         return wID;
     }
+
 //public boolean isSchedulingState() {
     //   return schedulingState;
     // }

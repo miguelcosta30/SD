@@ -3,7 +3,10 @@ package edu.ufp.inf.sd.project.server;
 
 import edu.ufp.inf.sd.project.client.WorkerImpl;
 import edu.ufp.inf.sd.project.client.WorkerRI;
+import edu.ufp.inf.sd.project.producer.Producer;
 
+import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -51,11 +54,7 @@ public class JobShopSessionImpl implements JobShopSessionRI {
 
     @Override
     public void pauseJobGroup(int id) throws RemoteException {
-         //  for(JobGroupRI j : this.jobGroups) {
-         //      if(j.getId() == id) {
-         //          j.setSchedulingState(false);
-         //      }
-         //  }
+
         }
 
     @Override
@@ -80,10 +79,11 @@ public class JobShopSessionImpl implements JobShopSessionRI {
     }
 
     @Override
-    public boolean assocWorker(int idJ,int idw) throws RemoteException { //id do worker id jobgroup
+    public boolean assocWorker(int idJ) throws RemoteException { //id do worker id jobgroup
+        int idw = JobShopServer.count();
         if(JobShopServer.containsWorker(idw)) { //verifica se id deste worker está ser utilizado
             return false;
-        }
+         }
 
         JobGroupImpl j = JobShopServer.getJobGroup(idJ); //buscar o jobgroup por id
         if(j !=  null) {
@@ -159,6 +159,24 @@ public class JobShopSessionImpl implements JobShopSessionRI {
         }
     }
 
+    @Override
+    public void executeJobGroup(int idJ) throws RemoteException {
+        JobGroupRI j = this.getJobGroupId(idJ);
+        if(j != null) {
+            for(WorkerRI w : workers) {
+                String[] args = new String[]{ "bash","-c", "/home/tiago/IdeaProjects/SD/src/edu/ufp/inf/sd/project/runscripts_rmq/runproducer.sh " + w.getId() +  " " + j.getFilename() + " "};
+                try {
+                    ProcessBuilder p = new ProcessBuilder("./runproducer.sh",String.valueOf(w.getId()),j.getFilename());
+                    p.directory(new File("/home/tiago/IdeaProjects/SD/src/edu/ufp/inf/sd/project/runscripts_rmq"));
+                    Process proc = p.start();
+                    //System.out.println(proc);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+     }
+
     private int calculateMaxCreditsSentJobGroup(int idJobGroup) {
         int maxCredits = 0;
         int i = 0;
@@ -167,7 +185,7 @@ public class JobShopSessionImpl implements JobShopSessionRI {
             if (!j.getWorkers().isEmpty()) {
                 for (WorkerRI w : j.getWorkers()) {
                     if (i == 0) {
-                        maxCredits += 10;
+                        maxCredits += 11;
                         i = 1;
                     } else {
                         maxCredits += 1;
@@ -175,7 +193,7 @@ public class JobShopSessionImpl implements JobShopSessionRI {
                 }
                 return maxCredits + 1; //para o que estou associar
             } else {
-                return maxCredits + 10; //primeiro então vai ser o melhor tempo
+                return maxCredits + 11; //primeiro então vai ser o melhor tempo
             }
         }
         return 0;

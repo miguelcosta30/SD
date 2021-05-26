@@ -9,9 +9,10 @@ public interface JobShopSessionRI extends Remote {
     void pauseJobGroup(int id) throws RemoteException;
     void deleteJobGroup(int id) throws RemoteException;
     void logout() throws RemoteException;
-    boolean assocWorker(int idJ, int idw) throws RemoteException;
+    boolean assocWorker(int idJ) throws RemoteException;
     void printWorkers(int id) throws  RemoteException;
     void printWorkersSession() throws RemoteException;
     void execute(int idJ, SchedulingState schedulingState) throws RemoteException;
     String showBalace() throws RemoteException;
+    void executeJobGroup(int idJ) throws RemoteException;
     }

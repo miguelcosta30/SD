@@ -14,6 +14,7 @@ public interface JobGroupRI extends Remote {
      SchedulingState getSchedulingState() throws RemoteException;
      void setSchedulingState(SchedulingState state) throws RemoteException;
      void update(int workerID) throws RemoteException;
+     String getFilename() throws RemoteException;
 
 //     void setSchedulingState(boolean schedulingState);
 

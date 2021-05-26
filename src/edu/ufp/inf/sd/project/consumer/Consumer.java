@@ -29,58 +29,70 @@ package edu.ufp.inf.sd.project.consumer;
  * @author rui
  */
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
-import edu.ufp.inf.sd.project.producer.Producer;
+import com.rabbitmq.client.*;
+import edu.ufp.inf.sd.project.util.RabbitUtils;
 
 
 public class Consumer {
 
-    //private final static String QUEUE_NAME = "helloqueue";
-
     public static void main(String[] argv) throws Exception {
-        try {
-            /* Open a connection and a channel, and declare the queue from which to consume.
-            Declare the queue here, as well, because we might start the client before the publisher. */
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
-            //Use same username/passwd as the for accessing Management UI @ http://localhost:15672/
-            //Default credentials are: guest/guest (change accordingly)
-            factory.setUsername("guest");
-            factory.setPassword("guest");
-            //factory.setPassword("guest4rabbitmq");
-            Connection connection=factory.newConnection();
-            Channel channel=connection.createChannel();
 
-            String resultsQueue = Producer.QUEUE_NAME + "_results";
+            //Read args passed via shell command
+            String host=argv[0];
+            int port=Integer.parseInt(argv[1]);
+            String exchangeName=argv[2];
 
-            channel.queueDeclare(resultsQueue, false, false, false, null);
-            //channel.queueDeclare(Producer.QUEUE_NAME, true, false, false, null);
-            System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+            //DO NOT USE try-with-resources HERE because closing resources (channel) will prevent receiving any messages.
+            try {
 
-            /* The server pushes messages asynchronously, hence we provide a
-            DefaultConsumer callback that will buffer the messages until we're ready to use them.
-            Consumer client = new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    String message=new String(body, "UTF-8");
-                    System.out.println(" [x] Received '" + message + "'");
+                // TODO: Create a channel to RabbitMQ
+                Connection connection = RabbitUtils.newConnection2Server(host, port, "guest", "guest");
+                Channel channel = RabbitUtils.createChannel2Server(connection);
+
+                // TODO: Declare exchange of type TOPIC
+                channel.exchangeDeclare(exchangeName, BuiltinExchangeType.TOPIC);
+
+                // TODO: Create a non-durable, exclusive, autodelete queue with a generated name
+                String queueName = channel.queueDeclare().getQueue();;
+
+
+                System.out.println("main(): argv.length=" + argv.length);
+
+                if (argv.length < 4) {
+                    System.err.println("Usage: ReceiveLogsTopic [HOST] [PORT] [EXCHANGE] [BindingKey1] [RoutingKey2]");
+                    System.exit(1);
                 }
-            };
-            channel.basicConsume(Producer.QUEUE_NAME, true, client    );
-            */
 
-            DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String message = new String(delivery.getBody(), "UTF-8");
-                System.out.println(" [x] Received '" + message + "'");
-            };
-            channel.basicConsume(resultsQueue, true, deliverCallback, consumerTag -> { });
+                //Bind to each routing key (received from args[3] upward)
+                for (int i=3; i < argv.length; i++) {
+                    String bindingKey = argv[i];
+                    System.err.println("main(): add queue bind to queue = " + queueName + ", with bindingKey = " + bindingKey);
 
-        } catch (Exception e){
-            //Logger.getLogger(Recv.class.getName()).log(Level.INFO, e.toString());
-            e.printStackTrace();
+                    // TODO: Create binding: tell exchange to send messages to a queue
+                    channel.queueBind(queueName, exchangeName, bindingKey);
+
+                }
+
+                System.out.println(" [*] Waiting for messages... to exit press CTRL+C");
+
+                //Create callback that will receive messages from topic
+                DeliverCallback deliverCallback=(consumerTag, delivery) -> {
+                    String message=new String(delivery.getBody(), "UTF-8");
+                    System.out.println(" [x] Received '" +
+                            delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
+                };
+                CancelCallback cancelCallback=(consumerTag) -> {
+                    System.out.println(" [x] Cancel callback activated: " + consumerTag);
+                };
+
+                // TODO: Consume with deliver and cancel callbacks
+                channel.basicConsume(queueName, true, deliverCallback, cancelCallback);
+
+                //Current Thread waits till interrupted (avoids finishing try-with-resources which closes channel)
+                //Thread.currentThread().join();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-    }
 }

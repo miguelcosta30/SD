@@ -1,8 +1,6 @@
 package edu.ufp.inf.sd.project.server;
 
-import edu.ufp.inf.sd.project.client.WorkerImpl;
 import edu.ufp.inf.sd.project.client.WorkerRI;
-import edu.ufp.inf.sd.rabbitmqservices._02_workqueues.consumer.Worker;
 import edu.ufp.inf.sd.rmi.util.rmisetup.SetupContextRMI;
 
 import java.io.FileInputStream;
@@ -39,9 +37,14 @@ public class JobShopServer {
      * Remote interface that will hold reference MAIL_TO_ADDR the Servant impl
      */
     private JobShopFactoryRI jobShopFactoryRI;
+    private static int workerID = 0;
+
+    public static int count() {
+        workerID++;
+        return workerID;
+    }
 
     private static ArrayList<JobGroupImpl> jobGroups = new ArrayList<>();
-    //private static ArrayList<WorkerImpl> workers = new ArrayList<>();
 
     public static void main(String[] args) {
         if (args != null && args.length < 3) {
@@ -162,7 +165,7 @@ public class JobShopServer {
         return false;
     }
 
-    public static boolean containsJSS(String jss) {
+    public static boolean containsJSS(String jss) throws RemoteException{
         for(JobGroupImpl j : jobGroups) {
             if(j.getFilename().compareTo(jss) == 0) {
                 return true; //instancia de JSS a ser utilizada
@@ -172,7 +175,7 @@ public class JobShopServer {
     }
 
     public static String printWorkers(int id) {
-       String s = null;
+       String s = "";
        for(JobGroupImpl w: jobGroups) {
            if (w.getId() == id) {
                if (w.getWorkers() != null) {

@@ -1,14 +1,16 @@
 package edu.ufp.inf.sd.project.producer;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import edu.ufp.inf.sd.project.util.geneticalgorithm.CrossoverStrategies;
+import com.rabbitmq.client.*;
+import edu.ufp.inf.sd.project.server.JobShopServer;
+import edu.ufp.inf.sd.project.util.RabbitUtils;
+import edu.ufp.inf.sd.rabbitmqservices._05_rpc.client.RPCClient;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * RabbitMQ speaks multiple protocols. This tutorial uses AMQP 0-9-1, which is
@@ -31,59 +33,39 @@ import java.util.logging.Logger;
 public class Producer {
 
     /*+ name of the queue */
-    public final static String QUEUE_NAME="jssp_ga";
 
-    public static void main(String[] argv) {
+    public static void main(String[] argv) throws IOException {
         //Connection connection=null;
         //Channel channel=null;
+        if(argv.length < 4) {
+            System.err.println("Usage: ReceiveLogsTopic [HOST] [PORT] [EXCHANGE] [JobGroupID] [Ficheiro]");
+        }
 
-        /* Create a connection to the server (abstracts the socket connection,
-           protocol version negotiation and authentication, etc.) */
-        ConnectionFactory factory=new ConnectionFactory();
-        factory.setHost("localhost");
-        factory.setUsername("guest");
-        factory.setPassword("guest");
+        String host = argv[0];
+        int port = Integer.parseInt(argv[1]);
+        String exchangeName = argv[2]; //
+
+        String workerid = argv[3];
+        String filename = RabbitUtils.getMessage(argv,4); //ir buscar o caminho do ficheiro
+        BufferedWriter writer = new BufferedWriter(new FileWriter("/home/tiago/Desktop/boas.txt",true));
+        writer.write(filename + " " + workerid + " ");
+        writer.close();
+
         //factory.setPassword("guest4rabbitmq");
 
         /* try-with-resources\. will close resources automatically in reverse order... avoids finally */
-        try (//Create a channel, which is where most of the API resides
-             Connection connection=factory.newConnection();
-             Channel channel=connection.createChannel()
-        ) {
-            /* We must declare a queue to send to; this is idempotent, i.e.,
-            it will only be created if it doesn't exist already;
-            then we can publish a message to the queue; The message content is a
-            byte array (can encode whatever we need). */
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            //channel.queueDeclare(QUEUE_NAME, true, false, false, null);
 
-            // Change strategy to CrossoverStrategies.TWO
-            sendMessage(channel, String.valueOf(CrossoverStrategies.TWO.strategy));
-            Thread.currentThread().sleep(2000);
+        try (Connection connection=RabbitUtils.newConnection2Server(host, port, "guest", "guest");
+             Channel channel = RabbitUtils.createChannel2Server(connection)) {
 
-            // Change strategy to CrossoverStrategies.THREE
-            sendMessage(channel, String.valueOf(CrossoverStrategies.THREE.strategy));
-            Thread.currentThread().sleep(2000);
+            channel.exchangeDeclare(exchangeName, BuiltinExchangeType.TOPIC);
+            //Messages are not persisted (will be lost if no queue is bound to exchange yet)
+            AMQP.BasicProperties props=null;//=MessageProperties.PERSISTENT_TEXT_PLAIN
+            channel.basicPublish(exchangeName, workerid, null, filename.getBytes("UTF-8"));
+        } catch (IOException | TimeoutException e) {
 
-            // Stop the GA
-            sendMessage(channel, "stop");
-
-        } catch (IOException | TimeoutException | InterruptedException e) {
-            Logger.getLogger(Producer.class.getName()).log(Level.INFO, e.toString());
-        } /* The try-with-resources will close resources automatically in reverse order
-            finally {
-            try {
-                // Lastly, we close the channel and the connection
-                if (channel != null) { channel.close(); }
-                if (connection != null) { connection.close(); }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } */
+            e.printStackTrace();
+        }
     }
 
-    public static void sendMessage(Channel channel, String message) throws IOException {
-        channel.basicPublish("", QUEUE_NAME, null, message.getBytes("UTF-8"));
-        System.out.println(" [x] Sent '" + message + "'");
-    }
 }

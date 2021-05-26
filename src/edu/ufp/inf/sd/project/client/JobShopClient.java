@@ -1,9 +1,6 @@
 package edu.ufp.inf.sd.project.client;
 
 import edu.ufp.inf.sd.project.server.*;
-import edu.ufp.inf.sd.project.util.geneticalgorithm.CrossoverStrategies;
-import edu.ufp.inf.sd.project.util.geneticalgorithm.GeneticAlgorithmJSSP;
-import edu.ufp.inf.sd.project.util.tabusearch.TabuSearchJSSP;
 import edu.ufp.inf.sd.rmi.util.rmisetup.SetupContextRMI;
 import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
@@ -110,12 +107,12 @@ public class JobShopClient {
             jobShopSessionRI1.createJobGroup(2,300,basePath + "la03.txt",1);
             //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Credits JobGroup 1");
             //print(jobShopSessionRI.listJobGroup());
-            print(jobShopSessionRI.showBalace());
-            jobShopSessionRI.assocWorker(1,1);
-            jobShopSessionRI.assocWorker(1,2);
-            jobShopSessionRI.assocWorker(1,4);
-            jobShopSessionRI1.assocWorker(1,3);
-            jobShopSessionRI1.assocWorker(1,5);
+            //print(jobShopSessionRI.showBalace());
+            jobShopSessionRI.assocWorker(1);
+            jobShopSessionRI.assocWorker(1);
+            jobShopSessionRI.assocWorker(1);
+            jobShopSessionRI1.assocWorker(1);
+            jobShopSessionRI1.assocWorker(1);
 
             //jobShopSessionRI1.assocWorker(1,3); Verificar que nao adiciona worker com o mesmo id
 
@@ -126,8 +123,7 @@ public class JobShopClient {
             SchedulingState schedulingState = new SchedulingState(basePath + "la01.txt");
             jobShopSessionRI.execute(1,schedulingState);
             jobShopSessionRI.printWorkers(1);
-
-
+            jobShopSessionRI.executeJobGroup(1);
             //============ Call TS remote service ============
            // String jsspInstancePath = "edu/ufp/inf/sd/project/data/la01.txt";
            // int makespan = this.jobShopRI.runTS(jsspInstancePath);
