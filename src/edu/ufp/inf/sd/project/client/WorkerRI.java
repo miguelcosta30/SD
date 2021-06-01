@@ -14,5 +14,4 @@ public interface WorkerRI {
     SchedulingState getLastWorkerState();
     void setLastWorkerState(SchedulingState lastWorkerState);
     void addCredits(int credits) throws RemoteException;
-    void runGA(String jsspInstance) throws RemoteException;
     }

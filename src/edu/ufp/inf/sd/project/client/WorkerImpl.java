@@ -2,8 +2,6 @@ package edu.ufp.inf.sd.project.client;
 
 import edu.ufp.inf.sd.project.server.JobGroupRI;
 import edu.ufp.inf.sd.project.server.SchedulingState;
-import edu.ufp.inf.sd.project.util.geneticalgorithm.CrossoverStrategies;
-import edu.ufp.inf.sd.project.util.geneticalgorithm.GeneticAlgorithmJSSP;
 import edu.ufp.inf.sd.project.util.tabusearch.TabuSearchJSSP;
 
 import java.rmi.RemoteException;
@@ -52,14 +50,25 @@ public class WorkerImpl implements WorkerRI {
                 ",jobgroup " + jobGroupRI.getId() +
                 '}';
     }
+
+    /**
+     * Corre algortitmo TabuSearch numa certa instancia passada pelo estado
+     * @param jsspInstance
+     * @return
+     * @throws RemoteException
+     */
     @Override
     public int runTS(String jsspInstance) throws RemoteException {
         TabuSearchJSSP ts = new TabuSearchJSSP(jsspInstance);
         int makespan = ts.run();
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, this.id + " [TS] Makespan for {0} = {1}", new Object[]{jsspInstance,String.valueOf(makespan)});
-        
         return makespan;
     }
+
+    /**
+     * Manda correr o algoritmo quando o seu estado é alterado com a instancia no estado
+     * @throws RemoteException
+     */
     @Override
     public void update() throws RemoteException {
         try {
@@ -72,23 +81,20 @@ public class WorkerImpl implements WorkerRI {
         }
     }
 
-    @Override
-    public void runGA(String jsspInstance) throws RemoteException {
-        String queue = "jssp_ga";
-        String resultsQueue = queue + "_results";
-        CrossoverStrategies strategy = CrossoverStrategies.ONE;
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-               "GA is running for {0}, check queue {1}",
-              new Object[]{jsspInstance,resultsQueue});
-        GeneticAlgorithmJSSP ga = new GeneticAlgorithmJSSP(jsspInstance, queue, strategy);
-        ga.run();
-    }
-
+    /**
+     * Notificia JobGroup passand o id do worker por argumento
+     * @throws RemoteException
+     */
     public void notifyJobGroup() throws RemoteException {
         this.jobGroupRI.update(this.id);
     }
+
+    /**
+     * Adiciona créditos ao worker
+     * @param credits
+     */
     @Override
-    public void addCredits(int credits) throws RemoteException{
+    public void addCredits(int credits) {
         if(credits > 0) {
             this.credits += credits;
         }

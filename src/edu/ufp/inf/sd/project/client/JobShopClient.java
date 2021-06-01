@@ -83,7 +83,10 @@ public class JobShopClient {
         }
         return jobShopFactoryRI;
     }
-    
+
+    /**
+     * Funcao de Testes do cliente
+     */
     private void playService() {
         try {
             boolean b = this.jobShopFactoryRI.register("tiago","123");
@@ -102,46 +105,45 @@ public class JobShopClient {
 
             String basePath = "edu/ufp/inf/sd/project/data/";
             jobShopFactoryRI.creditTrasaction("tiago",200);
-            jobShopSessionRI.createJobGroup(1,13,basePath + "la01.txt",1);
+            jobShopFactoryRI.creditTrasaction("miguel",400);
+            jobShopSessionRI.createJobGroup(1,200,basePath + "la39.txt",1);
+            boolean a = jobShopSessionRI1.createJobGroup(2,300,basePath + "la03.txt",1);
             jobShopSessionRI.createJobGroup(3,300,basePath + "la02.txt",0);
-            jobShopSessionRI1.createJobGroup(2,300,basePath + "la03.txt",1);
+            print(Boolean.toString(a));
             //Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Credits JobGroup 1");
             //print(jobShopSessionRI.listJobGroup());
             //print(jobShopSessionRI.showBalace());
+
             jobShopSessionRI.assocWorker(1);
             jobShopSessionRI.assocWorker(1);
             jobShopSessionRI.assocWorker(1);
-            jobShopSessionRI1.assocWorker(1);
             jobShopSessionRI1.assocWorker(1);
 
-            //jobShopSessionRI1.assocWorker(1,3); Verificar que nao adiciona worker com o mesmo id
+            jobShopSessionRI1.assocWorker(2);
+            jobShopSessionRI1.assocWorker(2);
+            jobShopSessionRI1.assocWorker(2);
 
             //jobShopSessionRI.deleteJobGroup(1);
+            print(jobShopSessionRI.listJobGroup());
             print(jobShopSessionRI1.listJobGroup());
             //jobShopSessionRI.printWorkersSession();
 
-            SchedulingState schedulingState = new SchedulingState(basePath + "la01.txt");
+            SchedulingState schedulingState = new SchedulingState(basePath + "la39.txt");
             jobShopSessionRI.execute(1,schedulingState);
-            jobShopSessionRI.printWorkers(1);
-            jobShopSessionRI.executeJobGroup(1);
-            //============ Call TS remote service ============
-           // String jsspInstancePath = "edu/ufp/inf/sd/project/data/la01.txt";
-           // int makespan = this.jobShopRI.runTS(jsspInstancePath);
-           // Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-           //         "[TS] Makespan for {0} = {1}",
-           //         new Object[]{jsspInstancePath,String.valueOf(makespan)});
+            //jobShopSessionRI.printWorkers(1);
+
+            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "eheheheheh");
+            SchedulingState schedulingState2 = new SchedulingState(basePath + "la02.txt");
+            jobShopSessionRI1.execute(2,schedulingState2);
+            print(jobShopSessionRI1.printWorkers(2));
+            print(jobShopSessionRI.printWorkers(1));
 
 
-            //============ Call GA ============
-            //String queue = "jssp_ga";
-            //String resultsQueue = queue + "_results";
-            //CrossoverStrategies strategy = CrossoverStrategies.ONE;
-            //Logger.getLogger(this.getClass().getName()).log(Level.INFO,
-            //       "GA is running for {0}, check queue {1}",
-            //      new Object[]{jsspInstancePath,resultsQueue});
-            //GeneticAlgorithmJSSP ga = new GeneticAlgorithmJSSP(jsspInstancePath, queue, strategy);
-           //ga.run();
+            jobShopSessionRI.executeRMQ(1);
+            //jobShopSessionRI.printWorkers(1);
 
+            //jobShopSessionRI.executeRMQ(2);
+            //jobShopSessionRI.printWorkers(2);
 
         } catch (RemoteException ex) {
             Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);

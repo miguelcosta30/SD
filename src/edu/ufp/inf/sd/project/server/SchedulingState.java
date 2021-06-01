@@ -2,8 +2,6 @@ package edu.ufp.inf.sd.project.server;
 
 import java.io.Serializable;
 
-
-
 public class SchedulingState implements Serializable {
     private String instace;
     private int credits;

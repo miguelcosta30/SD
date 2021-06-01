@@ -10,12 +10,10 @@ public interface JobGroupRI extends Remote {
      void addWorker(WorkerRI worker);
      int getId();
      ArrayList<WorkerRI> getWorkers();
-     void remWorker(WorkerRI workerRI) throws RemoteException;
      SchedulingState getSchedulingState() throws RemoteException;
      void setSchedulingState(SchedulingState state) throws RemoteException;
      void update(int workerID) throws RemoteException;
      String getFilename() throws RemoteException;
-
-//     void setSchedulingState(boolean schedulingState);
-
+     void waitforWorker(String []argv) throws RemoteException;
+     void updateRMQ() throws RemoteException;
 }

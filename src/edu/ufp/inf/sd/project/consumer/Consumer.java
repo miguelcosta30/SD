@@ -31,12 +31,21 @@ package edu.ufp.inf.sd.project.consumer;
 
 import com.rabbitmq.client.*;
 import edu.ufp.inf.sd.project.util.RabbitUtils;
+import edu.ufp.inf.sd.project.util.geneticalgorithm.CrossoverStrategies;
+import edu.ufp.inf.sd.project.util.geneticalgorithm.GeneticAlgorithmJSSP;
 
+import java.nio.charset.StandardCharsets;
+import java.rmi.RemoteException;
 
 public class Consumer {
+    public static String message;
 
+    /**
+     * recebe pela fila o ficheiro JSSP para correr o algoritmo Genetic Alg.
+     * @param argv
+     * @throws Exception
+     */
     public static void main(String[] argv) throws Exception {
-
             //Read args passed via shell command
             String host=argv[0];
             int port=Integer.parseInt(argv[1]);
@@ -45,15 +54,13 @@ public class Consumer {
             //DO NOT USE try-with-resources HERE because closing resources (channel) will prevent receiving any messages.
             try {
 
-                // TODO: Create a channel to RabbitMQ
                 Connection connection = RabbitUtils.newConnection2Server(host, port, "guest", "guest");
                 Channel channel = RabbitUtils.createChannel2Server(connection);
 
-                // TODO: Declare exchange of type TOPIC
                 channel.exchangeDeclare(exchangeName, BuiltinExchangeType.TOPIC);
 
-                // TODO: Create a non-durable, exclusive, autodelete queue with a generated name
-                String queueName = channel.queueDeclare().getQueue();;
+
+                String queueName = channel.queueDeclare().getQueue();
 
 
                 System.out.println("main(): argv.length=" + argv.length);
@@ -67,32 +74,37 @@ public class Consumer {
                 for (int i=3; i < argv.length; i++) {
                     String bindingKey = argv[i];
                     System.err.println("main(): add queue bind to queue = " + queueName + ", with bindingKey = " + bindingKey);
-
-                    // TODO: Create binding: tell exchange to send messages to a queue
                     channel.queueBind(queueName, exchangeName, bindingKey);
-
                 }
 
                 System.out.println(" [*] Waiting for messages... to exit press CTRL+C");
 
-                //Create callback that will receive messages from topic
                 DeliverCallback deliverCallback=(consumerTag, delivery) -> {
-                    String message=new String(delivery.getBody(), "UTF-8");
-                    System.out.println(" [x] Received '" +
-                            delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
+
+                    runGA(message,delivery.getEnvelope().getRoutingKey());
                 };
+
                 CancelCallback cancelCallback=(consumerTag) -> {
                     System.out.println(" [x] Cancel callback activated: " + consumerTag);
                 };
 
-                // TODO: Consume with deliver and cancel callbacks
                 channel.basicConsume(queueName, true, deliverCallback, cancelCallback);
 
-                //Current Thread waits till interrupted (avoids finishing try-with-resources which closes channel)
-                //Thread.currentThread().join();
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+
+    public static void runGA(String jsspInstance, String queue) throws RemoteException {
+        String resultsQueue = queue + "_results";
+        CrossoverStrategies strategy = CrossoverStrategies.ONE;
+        GeneticAlgorithmJSSP ga = new GeneticAlgorithmJSSP(jsspInstance, queue, strategy);
+        ga.run();
+    }
+
 }
+
+

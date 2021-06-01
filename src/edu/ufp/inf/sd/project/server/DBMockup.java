@@ -17,7 +17,7 @@ public class DBMockup {
     }
 
     /**
-     * This constructor creates and inits the database with some books and users.
+     * This constructor creates and inits the database with some users.
      */
 
     /**

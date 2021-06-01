@@ -132,10 +132,19 @@ public class JobShopServer {
         out.close();
     }
 
+    /**
+     * adiciona jobgroup ao array estatico de jobgroups
+     * @param j jobgroup a adicoonar
+     */
     public static void addJobGroup(JobGroupImpl j) {
             jobGroups.add(j);
     }
 
+    /**
+     * verfica se arraylist contem jobgroup
+     * @param id id do jobgroup para ver se existe
+     * @return true - existe | false - nao existe
+     */
     public static boolean containsJobGroup(int id) {
         for(JobGroupImpl j : jobGroups) {
             if(j.getId() == id) {
@@ -145,6 +154,11 @@ public class JobShopServer {
         return false;
     }
 
+    /**
+     * verficia se contem worker
+     * @param id id worker para ver se existe
+     * @return true - existe | false - nao existe
+     */
     public static boolean containsWorker(int id) {
         for(JobGroupImpl j : jobGroups) {
             for(WorkerRI w : j.getWorkers()) {
@@ -156,6 +170,11 @@ public class JobShopServer {
         return false;
     }
 
+    /**
+     * apaga um jobgroup
+     * @param id id do jobgroup para apgar
+     * @return true - bem sucedido | false - mal sucedido
+     */
     public static boolean deleteJobGroup(int id) {
         JobGroupImpl j = getJobGroup(id);
         if(j != null) {
@@ -165,6 +184,12 @@ public class JobShopServer {
         return false;
     }
 
+    /**
+     * verficar se o JSS já está a ser usado em algum JobGroup
+     * @param jss intacia a verificar
+     * @return true - utilizado | false - nao utilizado
+     * @throws RemoteException
+     */
     public static boolean containsJSS(String jss) throws RemoteException{
         for(JobGroupImpl j : jobGroups) {
             if(j.getFilename().compareTo(jss) == 0) {
@@ -174,6 +199,11 @@ public class JobShopServer {
         return false;
     }
 
+    /**
+     * mostra os workers existestes num jobgroup
+     * @param id id jobgroup
+     * @return string de workers
+     */
     public static String printWorkers(int id) {
        String s = "";
        for(JobGroupImpl w: jobGroups) {
@@ -186,6 +216,11 @@ public class JobShopServer {
        return s;
     }
 
+    /**
+     * procura jobgroup no arraylist
+     * @param id id jobgroup
+     * @return retorna jobgroup ou null se nao encontrar
+     */
     public static JobGroupImpl getJobGroup(int id) {
         for(JobGroupImpl j : jobGroups) {
             if(j.getId() == id ) {
